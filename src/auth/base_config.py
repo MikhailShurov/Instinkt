@@ -4,7 +4,7 @@ from fastapi_users.authentication import CookieTransport
 
 from src.auth.manager import get_user_manager
 from src.config import SECRET_KEY
-from src.database import User
+from src.auth.models import User
 
 cookie_transport = CookieTransport(cookie_name="token", cookie_max_age=3600)
 
