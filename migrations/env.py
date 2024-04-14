@@ -1,6 +1,6 @@
 from logging.config import fileConfig
 from os import environ
-from models import users
+from src import models
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
