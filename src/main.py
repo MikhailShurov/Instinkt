@@ -1,17 +1,10 @@
-from fastapi import FastAPI, Depends
-from fastapi_users import FastAPIUsers
+from fastapi import FastAPI
 
-from src.auth.auth import auth_backend
-from src.auth.database import User
-from src.auth.manager import get_user_manager
+from src.auth.base_config import fastapi_users
+from src.auth.base_config import auth_backend
 from src.auth.schemas import UserRead, UserCreate
 
 app = FastAPI(title="Instinkt", description="")
-
-fastapi_users = FastAPIUsers[User, int](
-    get_user_manager,
-    [auth_backend],
-)
 
 app.include_router(
     fastapi_users.get_auth_router(auth_backend),
@@ -24,10 +17,3 @@ app.include_router(
     prefix="/auth",
     tags=["auth"],
 )
-
-current_user = fastapi_users.current_user()
-
-
-@app.get("/protected-route")
-def protected_route(user: User = Depends(current_user)):
-    return f"Hello, {user.email}"
