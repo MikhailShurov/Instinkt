@@ -8,7 +8,7 @@ from pydantic import EmailStr
 class UserRead(schemas.BaseUser[int]):
     id: int
     email: str
-    account_created: date
+    account_created: str
     is_active: bool = True
     is_superuser: bool = False
     is_verified: bool = False
@@ -21,7 +21,7 @@ class UserCreate(schemas.BaseUserCreate):
     id: int
     email: str
     password: str
-    account_created: date
+    account_created: str
 
     is_active: Optional[bool] = True
     is_superuser: Optional[bool] = False
