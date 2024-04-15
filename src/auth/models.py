@@ -18,12 +18,13 @@ user_table = sqlalchemy.Table(
     sqlalchemy.Column("is_verified", sqlalchemy.Boolean)
 )
 
+
 class User(SQLAlchemyBaseUserTable[int], Base):
     __tablename__ = "users"
-    id = mapped_column(Integer, primary_key=True)
-    email = mapped_column(String(length=320), unique=True, index=True, nullable=False)
-    hashed_password = mapped_column(String(length=1024), nullable=False)
-    account_created = mapped_column(DateTime, nullable=False)
-    is_active = mapped_column(Boolean, default=True, nullable=False)
-    is_superuser = mapped_column(Boolean, default=False, nullable=False)
-    is_verified = mapped_column(Boolean, default=False, nullable=False)
+    id = sqlalchemy.Column(Integer, primary_key=True)
+    email = sqlalchemy.Column(String(length=320), unique=True, index=True, nullable=False)
+    hashed_password = sqlalchemy.Column(String(length=1024), nullable=False)
+    account_created = sqlalchemy.Column(DateTime, nullable=False)
+    is_active = sqlalchemy.Column(Boolean, default=True, nullable=False)
+    is_superuser = sqlalchemy.Column(Boolean, default=False, nullable=False)
+    is_verified = sqlalchemy.Column(Boolean, default=False, nullable=False)

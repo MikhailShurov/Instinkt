@@ -1,10 +1,12 @@
+from typing import Annotated
+
 from fastapi_users import FastAPIUsers
 from fastapi_users.authentication import AuthenticationBackend, JWTStrategy
 from fastapi_users.authentication import CookieTransport
 
 from src.auth.manager import get_user_manager
-from src.config import SECRET_KEY
 from src.auth.models import User
+from src.config import SECRET_KEY
 
 cookie_transport = CookieTransport(cookie_name="token", cookie_max_age=3600)
 
