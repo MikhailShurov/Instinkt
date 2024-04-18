@@ -1,20 +1,26 @@
-from typing import AsyncGenerator
+import datetime
 
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.config import DB_USER, DB_PASS, DB_HOST, DB_NAME
-
-DATABASE_URL = f"postgresql+asyncpg://{DB_USER}:{DB_PASS}@{DB_HOST}:5432/{DB_NAME}"
-
-Base = declarative_base()
+from src.auth.models import user_table, Users
 
 
-engine = create_async_engine(DATABASE_URL)
-async_session_maker = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+class DBManager:
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
+    async def create_user(self, email: str, hashed_password: str):
+        try:
+            user = Users(email=email, hashed_password=hashed_password, account_created=str(datetime.datetime))
+            self.session.add(user)
+            await self.session.commit()
+            return {"success": True, "message": "User created successfully", "user": user}
+        except Exception as e:
+            return {"success": False, "message": str(e)}
 
-async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
-    async with async_session_maker() as session:
-        yield session
+    async def get_user_by_email(self, email: str):
+        query = select(user_table).where(user_table.c.email == email)
+        result = await self.session.execute(query)
+        user = result.fetchone()
+        return user
