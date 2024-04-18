@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException
-
-from src.utils import get_async_session, get_db_manager, hash_password, verify_password, create_access_token
 from fastapi import status
+
 from src.auth.schemas import *
+from src.utils import get_db_manager, hash_password, verify_password, create_access_token
 
 router = APIRouter()
 
@@ -16,6 +16,7 @@ async def register_user(user_data: UserRegistration):
 
     hashed_password = hash_password(user_data.password)
     await db_manager.create_user(email=user_data.email, hashed_password=hashed_password)
+    await db_manager.create_empty_profile(user_data.email)
     return {"message": "User created successfully"}
 
 
@@ -28,4 +29,3 @@ async def login_user(user_data: UserRegistration):
 
     access_token = create_access_token(user_data.email)
     return {"access_token": access_token}
-
