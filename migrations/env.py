@@ -6,12 +6,11 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
-from src.auth.models import *
-from src.database import Base
+from src.auth.models import user_table, Users
+from src.auth.models import metadata as user_metadata
+from src.config import DB_HOST, DB_NAME, DB_PASS, DB_USER
 
 sys.path.append(os.path.join(sys.path[0], 'src'))
-
-from src.config import DB_HOST, DB_NAME, DB_PASS, DB_USER
 
 config = context.config
 
@@ -23,7 +22,7 @@ config.set_section_option(section, "DB_HOST", DB_HOST)
 
 fileConfig(config.config_file_name)
 
-target_metadata = Base.metadata
+target_metadata = user_metadata
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
