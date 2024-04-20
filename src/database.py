@@ -34,6 +34,13 @@ class DBManager:
         await self.session.commit()
         return profile
 
+    async def get_location_by_id(self, user_id: int):
+        query = select(profiles_table.c.location).where(profiles_table.c.id == user_id)
+        result = await self.session.execute(query)
+        location = result.scalar()
+        await self.session.commit()
+        return location
+
     async def update_profile_info(self, new_profile_info: Profile):
         profile_dict = new_profile_info.dict()
         query = profiles_table.update().where(profiles_table.c.email == new_profile_info.email).values(profile_dict)
