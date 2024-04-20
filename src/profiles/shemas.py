@@ -1,9 +1,9 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 
 
-class GetProfileByEmail(BaseModel):
+class GetProfileByID(BaseModel):
     token: str
-    email: str
+    id: int
 
 
 class Profile(BaseModel):
@@ -19,5 +19,5 @@ class Profile(BaseModel):
 
 class ChangeProfileInfo(BaseModel):
     token: str
-    email: str
+    id: int
     new_info: Profile

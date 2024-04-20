@@ -7,6 +7,7 @@ metadata = MetaData()
 profiles_table = Table(
     "profiles",
     metadata,
+    Column("id", Integer(), primary_key=True, autoincrement=True, nullable=False),
     Column("email", String(), primary_key=True, nullable=False),
     Column("name", String(), nullable=False),
     Column("age", Integer(), nullable=False),
@@ -20,6 +21,7 @@ profiles_table = Table(
 
 class Profile(Base):
     __tablename__ = "profiles"
+    id = Column("id", Integer(), primary_key=True, autoincrement=True, nullable=False)
     email = Column("email", String(), primary_key=True, nullable=False)
     name = Column("name", String(), nullable=False)
     age = Column("age", Integer(), nullable=False)

@@ -16,7 +16,7 @@ class DBManager:
             user = Users(email=email, hashed_password=hashed_password, account_created=str(datetime.datetime))
             self.session.add(user)
             await self.session.commit()
-            return {"success": True, "message": "User created successfully", "user": user}
+            return user.id
         except Exception as e:
             return {"success": False, "message": str(e)}
 
@@ -27,8 +27,8 @@ class DBManager:
         await self.session.commit()
         return user
 
-    async def get_profile_by_email(self, email: str):
-        query = select(profiles_table).where(profiles_table.c.email == email)
+    async def get_profile_by_id(self, user_id: int):
+        query = select(profiles_table).where(profiles_table.c.id == user_id)
         result = await self.session.execute(query)
         profile = result.fetchone()
         await self.session.commit()
