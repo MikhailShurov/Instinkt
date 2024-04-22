@@ -1,4 +1,4 @@
-from sqlalchemy import String, Column, Table, MetaData, Integer
+from sqlalchemy import String, Column, Table, MetaData, Integer, Boolean
 from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
@@ -11,6 +11,7 @@ user_table = Table(
     Column("email", String(), index=True, primary_key=True),
     Column("hashed_password", String()),
     Column("account_created", String(), nullable=False),
+    Column("prime_status", Boolean(), default=False)
 )
 
 
@@ -20,3 +21,4 @@ class Users(Base):
     email = Column("email", String(length=320), index=True, nullable=False, primary_key=True)
     hashed_password = Column("hashed_password", String(length=1024), nullable=False)
     account_created = Column("account_created", String(length=100), nullable=False)
+    prime_status = Column("prime_status", Boolean(), default=False)

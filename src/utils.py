@@ -9,6 +9,8 @@ from sqlalchemy.orm import sessionmaker
 from src.config import DB_USER, DB_PASS, DB_HOST, DB_NAME, SECRET_JWT_KEY, REDIS_PASS, ES_CLOUD_PASS
 from src.database import DBManager
 
+from math import radians, sin, cos, sqrt, atan2
+
 DATABASE_URL = f"postgresql+asyncpg://{DB_USER}:{DB_PASS}@{DB_HOST}:5432/{DB_NAME}"
 engine = create_async_engine(DATABASE_URL)
 async_session_maker = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
@@ -22,14 +24,12 @@ es = Elasticsearch("https://f768326d7dda43fa91bf11bbc0da454b.us-central1.gcp.clo
                    basic_auth=('elastic', ES_CLOUD_PASS))
 
 mapping = {
-        "mappings": {
-            "properties": {
-                "location": {"type": "geo_point"}
-            }
+    "mappings": {
+        "properties": {
+            "location": {"type": "geo_point"}
         }
     }
-# es.indices.delete(index="location")
-# es.indices.create(index="location", body=mapping)
+}
 
 
 def search_nearby_people(lat: float, lon: float, r: int) -> list:
@@ -63,6 +63,30 @@ def add_location(lat: float, lon: float, uid: int):
     }
 
     es.index(index="location", body=new_location)
+
+
+def calculate_distance(lat1, lon1, lat2, lon2):
+    # Радиус Земли в километрах
+    R = 6371.0
+
+    # Переводим градусы в радианы
+    lat1 = radians(lat1)
+    lon1 = radians(lon1)
+    lat2 = radians(lat2)
+    lon2 = radians(lon2)
+
+    # Разница широт и долгот
+    dlat = lat2 - lat1
+    dlon = lon2 - lon1
+
+    # Формула для вычисления расстояния по формуле гаверсинусов
+    a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
+    c = 2 * atan2(sqrt(a), sqrt(1 - a))
+
+    # Расстояние между точками в километрах
+    distance = R * c
+
+    return distance
 
 
 def save_data(key, value):

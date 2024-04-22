@@ -47,6 +47,18 @@ class DBManager:
         await self.session.execute(query)
         await self.session.commit()
 
+    async def update_prime_status(self, uid: int, prime: bool):
+        query = user_table.update().where(user_table.c.id == uid).values(prime_status=prime)
+        await self.session.execute(query)
+        await self.session.commit()
+
+    async def check_prime_status(self, uid: int):
+        query = select(user_table.c.prime_status).where(user_table.c.id == uid)
+        result = await self.session.execute(query)
+        await self.session.commit()
+        prime_status = result.scalar()
+        return prime_status
+
     async def create_empty_profile(self, email: str):
         try:
             d_description = "Some words about yourself"
