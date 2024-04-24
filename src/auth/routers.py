@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi import status
 
 from src.auth.schemas import *
-from src.utils import get_db_manager, hash_password, verify_password, create_access_token
+from src.utils import get_db_manager, hash_password, verify_password, create_access_token, verify_request
 
 router = APIRouter()
 
@@ -28,3 +28,21 @@ async def login_user(user_data: UserRegistration):
         raise HTTPException(status_code=400, detail="Incorrect email or password")
     access_token = create_access_token(user.id)
     return {"access_token": access_token, "user_id": user.id}
+
+
+@router.post("/set_prime_status", status_code=status.HTTP_200_OK)
+async def set_prime_status(user_info: UpdatePrimeStatus):
+    if not verify_request(user_info.token, user_info.user_id):
+        raise HTTPException(status_code=400, detail="Invalid token or user id")
+    db_manager = await get_db_manager()
+    await db_manager.update_prime_status(user_info.user_id, user_info.prime)
+    return {"message": "ok"}
+
+
+@router.get("/check_prime_status", status_code=status.HTTP_200_OK)
+async def set_prime_status(user_info: UserModel):
+    if not verify_request(user_info.token, user_info.user_id):
+        raise HTTPException(status_code=400, detail="Invalid token or user id")
+    db_manager = await get_db_manager()
+    result = await db_manager.check_prime_status(user_info.user_id)
+    return {"prime_status": result}
