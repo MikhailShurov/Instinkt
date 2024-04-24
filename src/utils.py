@@ -1,12 +1,15 @@
 import hashlib
+
 import jwt
 import redis
-
+from elasticsearch import Elasticsearch
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
-from src.config import DB_USER, DB_PASS, DB_HOST, DB_NAME, SECRET_JWT_KEY, REDIS_PASS
+from src.config import DB_USER, DB_PASS, DB_HOST, DB_NAME, SECRET_JWT_KEY, REDIS_PASS, ES_CLOUD_PASS
 from src.database import DBManager
+
+from math import radians, sin, cos, sqrt, atan2
 
 DATABASE_URL = f"postgresql+asyncpg://{DB_USER}:{DB_PASS}@{DB_HOST}:5432/{DB_NAME}"
 engine = create_async_engine(DATABASE_URL)
@@ -16,6 +19,74 @@ redis = redis.Redis(
     host='redis-10905.c239.us-east-1-2.ec2.redns.redis-cloud.com',
     port=10905,
     password=REDIS_PASS)
+
+es = Elasticsearch("https://f768326d7dda43fa91bf11bbc0da454b.us-central1.gcp.cloud.es.io",
+                   basic_auth=('elastic', ES_CLOUD_PASS))
+
+mapping = {
+    "mappings": {
+        "properties": {
+            "location": {"type": "geo_point"}
+        }
+    }
+}
+
+
+def search_nearby_people(lat: float, lon: float, r: int) -> list:
+    index_name = "location"
+    query = {
+        "query": {
+            "bool": {
+                "must": {
+                    "match_all": {}
+                },
+                "filter": {
+                    "geo_distance": {
+                        "distance": f"{r}km",
+                        "location": {
+                            "lat": lat,
+                            "lon": lon
+                        }
+                    }
+                }
+            }
+        }
+    }
+    result = es.search(index=index_name, body=query)
+    return result
+
+
+def add_location(lat: float, lon: float, uid: int):
+    new_location = {
+        "uid": uid,
+        "location": {"lat": lat, "lon": lon}
+    }
+
+    es.index(index="location", body=new_location)
+
+
+def calculate_distance(lat1, lon1, lat2, lon2):
+    # Радиус Земли в километрах
+    R = 6371.0
+
+    # Переводим градусы в радианы
+    lat1 = radians(lat1)
+    lon1 = radians(lon1)
+    lat2 = radians(lat2)
+    lon2 = radians(lon2)
+
+    # Разница широт и долгот
+    dlat = lat2 - lat1
+    dlon = lon2 - lon1
+
+    # Формула для вычисления расстояния по формуле гаверсинусов
+    a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
+    c = 2 * atan2(sqrt(a), sqrt(1 - a))
+
+    # Расстояние между точками в километрах
+    distance = R * c
+
+    return distance
 
 
 def save_data(key, value):

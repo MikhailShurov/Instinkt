@@ -16,7 +16,7 @@ async def like(like_obj: Like):
     return {"status": "ok"}
 
 
-@router.post("/get_likes", status_code=status.HTTP_200_OK)
+@router.get("/get_likes", status_code=status.HTTP_200_OK)
 async def get_likes(user: GetLikes):
     if not verify_request(user.initiator_token, user.initiator_id):
         raise HTTPException(status_code=400, detail="Invalid initiator_id or token")
