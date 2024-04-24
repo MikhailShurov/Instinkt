@@ -66,32 +66,21 @@ def add_location(lat: float, lon: float, uid: int):
 
 
 def calculate_distance(lat1, lon1, lat2, lon2):
-    # Радиус Земли в километрах
-    R = 6371.0
-
-    # Переводим градусы в радианы
+    r = 6371.0
     lat1 = radians(lat1)
     lon1 = radians(lon1)
     lat2 = radians(lat2)
     lon2 = radians(lon2)
-
-    # Разница широт и долгот
     dlat = lat2 - lat1
     dlon = lon2 - lon1
-
-    # Формула для вычисления расстояния по формуле гаверсинусов
     a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
     c = 2 * atan2(sqrt(a), sqrt(1 - a))
-
-    # Расстояние между точками в километрах
-    distance = R * c
-
+    distance = r * c
     return distance
 
 
 def save_data(key, value):
     redis.rpush(key, value)
-    redis.save()
 
 
 def get_data(key):

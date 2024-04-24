@@ -1,6 +1,7 @@
 from fastapi import APIRouter, status, HTTPException
-from src.utils import get_db_manager, verify_request, add_location, search_nearby_people, calculate_distance
+
 from src.scrolling.schemas import NearbyProfilesRequest
+from src.utils import get_db_manager, verify_request, search_nearby_people, calculate_distance
 
 router = APIRouter()
 

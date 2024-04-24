@@ -21,9 +21,6 @@ async def update_profile(info: ChangeProfileInfo):
 
 @router.get("/get_profile_info", status_code=status.HTTP_200_OK)
 async def get_profile_by_id(info: GetProfileByID):
-    """
-    This endpoint takes user token and user id and returns the profile of this user
-    """
     token = create_access_token(info.id)
     if token != info.token:
         raise HTTPException(status_code=400, detail="Invalid email or token")

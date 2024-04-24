@@ -31,3 +31,5 @@ app.include_router(
     prefix="/scrolling",
     tags=["scrolling"]
 )
+
+# ToDo check, why i cant payload data in GET requests

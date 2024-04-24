@@ -1,10 +1,11 @@
 import datetime
 
-from sqlalchemy import select
+from sqlalchemy import select, insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.models import user_table, Users
 from src.profiles.models import profiles_table, Profile
+from src.likes.models import likes
 
 
 class DBManager:
@@ -58,6 +59,51 @@ class DBManager:
         await self.session.commit()
         prime_status = result.scalar()
         return prime_status
+
+    # async def check_if_like_exists(self, sender_id: int, receiver_id: int):
+    #     check_query = select(likes).where(
+    #         (likes.c.sender_id == sender_id) &
+    #         (likes.c.receiver_id == receiver_id)
+    #     )
+    #     result = await self.session.execute(check_query)
+    #     existing_record = result.fetchone()
+    #     return existing_record is not None
+
+    async def like(self, sender_id: int, receiver_id: int):
+        values = {
+            'sender_id': sender_id,
+            'receiver_id': receiver_id
+        }
+        # check_query = self.check_if_like_exists(sender_id, receiver_id)
+        # if check_query:
+        try:
+            query = insert(likes).values(values)
+            await self.session.execute(query)
+            await self.session.commit()
+        except Exception as e:
+            await self.session.commit()
+            raise Exception("Like already exists")
+        return {"like_status": "ok"}
+        # return {"like_status": "like is akready exists"}
+
+    async def get_mutual_likes(self, uid: int):
+        query = select(likes).where(
+            likes.c.sender_id == uid
+        )
+        result = await self.session.execute(query)
+        records = result.fetchall()
+
+        query2 = select(likes).where(
+            likes.c.receiver_id == uid
+        )
+        tmp = await self.session.execute(query2)
+        tmp = tmp.fetchall()
+
+        await self.session.commit()
+
+        result2 = [(like[1], like[0]) for like in tmp]
+        result = [like for like in result2 if like in records]
+        return result
 
     async def create_empty_profile(self, email: str):
         try:
