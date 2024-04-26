@@ -39,7 +39,7 @@ async def set_prime_status(user_info: UpdatePrimeStatus):
     return {"message": "ok"}
 
 
-@router.get("/check_prime_status", status_code=status.HTTP_200_OK)
+@router.post("/check_prime_status", status_code=status.HTTP_200_OK)
 async def set_prime_status(user_info: UserModel):
     if not verify_request(user_info.token, user_info.user_id):
         raise HTTPException(status_code=400, detail="Invalid token or user id")
