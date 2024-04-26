@@ -6,7 +6,7 @@ from src.utils import get_db_manager, verify_request, search_nearby_people, calc
 router = APIRouter()
 
 
-@router.get("/get_nearby_profiles", status_code=status.HTTP_200_OK)
+@router.post("/get_nearby_profiles", status_code=status.HTTP_200_OK)
 async def get_nearby_profiles(data: NearbyProfilesRequest):
     db_manager = await get_db_manager()
     if not verify_request(data.token, data.profile_id):
