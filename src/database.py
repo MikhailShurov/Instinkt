@@ -1,10 +1,11 @@
 import datetime
 
-from sqlalchemy import select, insert
+from sqlalchemy import select, insert, exists
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.models import user_table, Users
 from src.profiles.models import profiles_table, Profile
+from src.profiles.schemas import NewProfileInfo
 from src.likes.models import likes
 
 
@@ -14,7 +15,7 @@ class DBManager:
 
     async def create_user(self, email: str, hashed_password: str):
         try:
-            user = Users(email=email, hashed_password=hashed_password, account_created=str(datetime.datetime))
+            user = Users(email=email, hashed_password=hashed_password, account_created=str(datetime.datetime.utcnow()))
             self.session.add(user)
             await self.session.commit()
             return user.id
@@ -42,9 +43,19 @@ class DBManager:
         await self.session.commit()
         return location
 
-    async def update_profile_info(self, new_profile_info: Profile):
+    async def check_if_like_exists(self, user_id: int):
+        query = select(exists().where(likes.c.sender_id == user_id))
+        result = await self.session.execute(query)
+        return result.scalar()
+
+    async def update_profile_info(self, user_id: int, new_profile_info: NewProfileInfo):
         profile_dict = new_profile_info.dict()
-        query = profiles_table.update().where(profiles_table.c.email == new_profile_info.email).values(profile_dict)
+        update_fields = {"name": profile_dict["name"], "age": profile_dict["age"],
+                         "description": profile_dict["description"], "hobbies": profile_dict["hobbies"],
+                         "preferences": profile_dict["preferences"], "location": profile_dict["location"],
+                         "contacts": profile_dict["contacts"]}
+
+        query = profiles_table.update().where(profiles_table.c.id == user_id).values(update_fields)
         await self.session.execute(query)
         await self.session.commit()
 
@@ -60,27 +71,16 @@ class DBManager:
         prime_status = result.scalar()
         return prime_status
 
-    # async def check_if_like_exists(self, sender_id: int, receiver_id: int):
-    #     check_query = select(likes).where(
-    #         (likes.c.sender_id == sender_id) &
-    #         (likes.c.receiver_id == receiver_id)
-    #     )
-    #     result = await self.session.execute(check_query)
-    #     existing_record = result.fetchone()
-    #     return existing_record is not None
-
     async def like(self, sender_id: int, receiver_id: int):
         values = {
             'sender_id': sender_id,
             'receiver_id': receiver_id
         }
-        # check_query = self.check_if_like_exists(sender_id, receiver_id)
-        # if check_query:
         try:
             query = insert(likes).values(values)
             await self.session.execute(query)
             await self.session.commit()
-        except Exception as e:
+        except Exception as _:
             await self.session.commit()
             raise Exception("Like already exists")
         return {"like_status": "ok"}
@@ -110,7 +110,7 @@ class DBManager:
             d_description = "Some words about yourself"
             d_hobbies = "Your hobbies"
             d_preferences = "Tell about your favourite music/books/games"
-            d_location = "Your location"
+            d_location = "0.00000, 0.00000"
             d_contacts = "Place your contacts here:)"
             profile = Profile(email=email, name="Name", age=0, description=d_description, hobbies=d_hobbies,
                               preferences=d_preferences, location=d_location, contacts=d_contacts)

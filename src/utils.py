@@ -33,6 +33,11 @@ mapping = {
         }
     }
 }
+index_name = "location"
+
+
+# es.indices.delete(index=index_name)
+# es.indices.create(index=index_name, body=mapping)
 
 
 def search_nearby_people(lat: float, lon: float, r: int) -> list:
@@ -71,9 +76,11 @@ def add_location(lat: float, lon: float, uid: int):
 def delete_location(lat: float, lon: float):
     query = {
         "query": {
-            "match": {
-                "location.lat": lat,
-                "location.lon": lon
+            "bool": {
+                "must": [
+                    {"match": {"location.lat": lat}},
+                    {"match": {"location.lon": lon}}
+                ]
             }
         }
     }
@@ -148,17 +155,37 @@ def create_access_token(uid: int) -> str:
     return encoded_jwt
 
 
-def verify_request(token: str, uid: int):
-    return create_access_token(uid) == token
+def verify_request(token: str):
+    try:
+        decode_jwt_token(token)
+        return True
+    except jwt.InvalidTokenError:
+        return False
+
+
+def create_jwt_token(user_id: int) -> str:
+    payload = {"user_id": user_id}
+    token = jwt.encode(payload, SECRET_JWT_KEY, algorithm="HS256")
+    return token
+
+
+def decode_jwt_token(token: str) -> dict:
+    payload = jwt.decode(token, SECRET_JWT_KEY, algorithms=["HS256"])
+    return payload
 
 
 if __name__ == '__main__':
-    add_location(-45.123456, 78.456789, 1)
-    add_location(12.345678, -98.765432, 2)
-    add_location(0.987654, 34.567890, 3)
-    add_location(-23.456789, -56.789012, 4)
-    add_location(67.890123, 123.456789, 5)
+    # pass
+    # add_location(-45.123456, 78.456789, 1)
+    # add_location(12.345678, -98.765432, 2)
+    # add_location(0.987654, 34.567890, 3)
+    # add_location(-23.456789, -56.789012, 4)
+    # add_location(67.890123, 123.456789, 5)
 
-
+    # delete_location(-45.123456, 78.456789)
+    # delete_location(12.345678, -98.765432)
+    # delete_location(0.987654, 34.567890)
+    # delete_location(-23.456789, -56.789012)
+    # delete_location(67.890123, 123.456789)
 
     get_all_documents("location")

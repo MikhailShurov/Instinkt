@@ -17,7 +17,16 @@ class Profile(BaseModel):
     contacts: str
 
 
+class NewProfileInfo(BaseModel):
+    name: str
+    age: int
+    description: str
+    hobbies: str
+    preferences: str
+    location: str
+    contacts: str
+
+
 class ChangeProfileInfo(BaseModel):
     token: str
-    id: int
-    new_info: Profile
+    new_info: NewProfileInfo
