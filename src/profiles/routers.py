@@ -19,7 +19,7 @@ async def update_profile(info: ChangeProfileInfo):
     return {"status": "ok"}
 
 
-@router.get("/get_profile_info", status_code=status.HTTP_200_OK)
+@router.post("/get_profile_info", status_code=status.HTTP_200_OK)
 async def get_profile_by_id(info: GetProfileByID):
     token = create_access_token(info.id)
     if token != info.token:
