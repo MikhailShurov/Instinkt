@@ -15,13 +15,16 @@ DATABASE_URL = f"postgresql+asyncpg://{DB_USER}:{DB_PASS}@{DB_HOST}:5432/{DB_NAM
 engine = create_async_engine(DATABASE_URL)
 async_session_maker = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
-redis = redis.Redis(
-    host='redis-10905.c239.us-east-1-2.ec2.redns.redis-cloud.com',
-    port=10905,
-    password=REDIS_PASS)
+# redis = redis.Redis(
+#     host='redis-10905.c239.us-east-1-2.ec2.redns.redis-cloud.com',
+#     port=10905,
+#     password=REDIS_PASS)
 
-es = Elasticsearch("https://f768326d7dda43fa91bf11bbc0da454b.us-central1.gcp.cloud.es.io",
-                   basic_auth=('elastic', ES_CLOUD_PASS))
+redis = redis.Redis(
+    host='127.0.0.1',
+    port=6379)
+
+es = Elasticsearch("http://localhost:9200")
 
 mapping = {
     "mappings": {
@@ -63,6 +66,33 @@ def add_location(lat: float, lon: float, uid: int):
     }
 
     es.index(index="location", body=new_location)
+
+
+def delete_location(lat: float, lon: float):
+    query = {
+        "query": {
+            "match": {
+                "location.lat": lat,
+                "location.lon": lon
+            }
+        }
+    }
+
+    es.delete_by_query(index="location", body=query)
+
+
+def get_all_documents(index_name):
+    query = {
+        "query": {
+            "match_all": {}
+        }
+    }
+
+    result = es.search(index=index_name, body=query)
+
+    for hit in result["hits"]["hits"]:
+        document = hit["_source"]
+        print(document)
 
 
 def calculate_distance(lat1, lon1, lat2, lon2):
@@ -120,3 +150,15 @@ def create_access_token(uid: int) -> str:
 
 def verify_request(token: str, uid: int):
     return create_access_token(uid) == token
+
+
+if __name__ == '__main__':
+    add_location(-45.123456, 78.456789, 1)
+    add_location(12.345678, -98.765432, 2)
+    add_location(0.987654, 34.567890, 3)
+    add_location(-23.456789, -56.789012, 4)
+    add_location(67.890123, 123.456789, 5)
+
+
+
+    get_all_documents("location")
