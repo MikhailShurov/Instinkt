@@ -3,7 +3,8 @@ from fastapi import status
 from fastapi.security import OAuth2PasswordBearer
 
 from src.auth.schemas import *
-from src.utils import get_db_manager, hash_password, verify_password, create_jwt_token, decode_jwt_token, verify_request
+from src.utils import get_db_manager, hash_password, verify_password, create_jwt_token, decode_jwt_token, \
+    verify_request, create_base_location
 
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -19,7 +20,8 @@ async def register_user(user_data: UserRegistration):
 
     hashed_password = hash_password(user_data.password)
     user_id = await db_manager.create_user(email=user_data.email, hashed_password=hashed_password)
-    await db_manager.create_empty_profile(user_data.email)
+    await db_manager.create_empty_profile(user_data.email, user_id)
+    await create_base_location(user_id)
     token = create_jwt_token(user_id)
     return {"message": "User created successfully", "token": token}
 

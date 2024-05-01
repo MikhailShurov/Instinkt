@@ -64,6 +64,12 @@ class DBManager:
         await self.session.execute(query)
         await self.session.commit()
 
+    async def get_user_location(self, user_id: int):
+        queue = select(profiles_table.c.location).where(profiles_table.c.id == user_id)
+        result = await self.session.execute(queue)
+        await self.session.commit()
+        return result.scalar()
+
     async def check_prime_status(self, uid: int):
         query = select(user_table.c.prime_status).where(user_table.c.id == uid)
         result = await self.session.execute(query)
@@ -105,7 +111,7 @@ class DBManager:
         result = [like for like in result2 if like in records]
         return result
 
-    async def create_empty_profile(self, email: str):
+    async def create_empty_profile(self, email: str, uid: int):
         try:
             d_description = "Some words about yourself"
             d_hobbies = "Your hobbies"
@@ -117,5 +123,6 @@ class DBManager:
 
             self.session.add(profile)
             await self.session.commit()
+            await add_location(0.00000, 0.00000, uid)
         except Exception as e:
             return {"success": False, "message": str(e)}

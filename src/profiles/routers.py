@@ -2,8 +2,8 @@ import fastapi
 from fastapi import status, HTTPException
 
 from src.profiles.models import Profile
-from src.profiles.schemas import GetProfileByID, ChangeProfileInfo
-from src.utils import get_db_manager, create_access_token, verify_request, decode_jwt_token
+from src.profiles.schemas import ChangeProfileInfo
+from src.utils import get_db_manager, verify_request, decode_jwt_token, update_location, show_elastic
 
 router = fastapi.APIRouter()
 
@@ -15,11 +15,16 @@ async def update_profile(info: ChangeProfileInfo):
     try:
         lat, lon = list(map(float, info.new_info.location.split(", ")))
         location = str(lat) + ", " + str(lon)
-        info.new_info.location = location
     except Exception as _:
         raise HTTPException(status_code=400, detail="Invalid location")
     db_manager = await get_db_manager()
     user_id = decode_jwt_token(info.token)['user_id']
+
+    old_location = await db_manager.get_user_location(user_id)
+    if old_location != info.new_info.location:
+        await update_location(lat, lon, user_id)
+
+    info.new_info.location = location
     await db_manager.update_profile_info(user_id, info.new_info)
     return {"status": "ok"}
 
@@ -31,4 +36,5 @@ async def get_profile_by_id(token: str, user_id: int):
     db_manager = await get_db_manager()
     profile = await db_manager.get_profile_by_id(user_id)
     profile = profile._asdict()  # NOQA
+    profile.pop("id", None)
     return {"profile": Profile(**profile)}

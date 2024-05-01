@@ -1,4 +1,6 @@
+import asyncio
 import hashlib
+from math import radians, sin, cos, sqrt, atan2
 
 import jwt
 import redis
@@ -6,14 +8,12 @@ from elasticsearch import Elasticsearch
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
-from src.config import DB_USER, DB_PASS, DB_HOST, DB_NAME, SECRET_JWT_KEY, REDIS_PASS, ES_CLOUD_PASS
+from src.config import DB_USER, DB_PASS, DB_HOST, DB_NAME, SECRET_JWT_KEY, ES_PASS
 from src.database import DBManager
-
-from math import radians, sin, cos, sqrt, atan2
 
 DATABASE_URL = f"postgresql+asyncpg://{DB_USER}:{DB_PASS}@{DB_HOST}:5432/{DB_NAME}"
 engine = create_async_engine(DATABASE_URL)
-async_session_maker = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+async_session_maker = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)  # NOQA
 
 # redis = redis.Redis(
 #     host='redis-10905.c239.us-east-1-2.ec2.redns.redis-cloud.com',
@@ -24,7 +24,7 @@ redis = redis.Redis(
     host='127.0.0.1',
     port=6379)
 
-es = Elasticsearch("http://localhost:9200")
+es = Elasticsearch("http://localhost:9200", basic_auth=('elastic', ES_PASS))
 
 mapping = {
     "mappings": {
@@ -33,14 +33,13 @@ mapping = {
         }
     }
 }
-index_name = "location"
 
 
 # es.indices.delete(index=index_name)
 # es.indices.create(index=index_name, body=mapping)
 
 
-def search_nearby_people(lat: float, lon: float, r: int) -> list:
+async def search_nearby_people(lat: float, lon: float, r: int) -> list:
     index_name = "location"
     query = {
         "query": {
@@ -64,16 +63,30 @@ def search_nearby_people(lat: float, lon: float, r: int) -> list:
     return result
 
 
-def add_location(lat: float, lon: float, uid: int):
+async def update_location(lat: float, lon: float, uid: int):
+    query = {
+        "script": {
+            "source": "ctx._source.location.lat = params.lat; ctx._source.location.lon = params.lon",
+            "lang": "painless",
+            "params": {
+                "lat": lat,
+                "lon": lon
+            }
+        }
+    }
+    es.update_by_query(index="location", body={"query": {"term": {"uid": uid}}, **query})
+
+
+async def create_base_location(uid: int):
     new_location = {
         "uid": uid,
-        "location": {"lat": lat, "lon": lon}
+        "location": {"lat": 0.000000, "lon": 0.000000}
     }
 
     es.index(index="location", body=new_location)
 
 
-def delete_location(lat: float, lon: float):
+async def delete_location(lat: float, lon: float):
     query = {
         "query": {
             "bool": {
@@ -88,7 +101,7 @@ def delete_location(lat: float, lon: float):
     es.delete_by_query(index="location", body=query)
 
 
-def get_all_documents(index_name):
+async def show_elastic(index_name):
     query = {
         "query": {
             "match_all": {}
@@ -100,6 +113,15 @@ def get_all_documents(index_name):
     for hit in result["hits"]["hits"]:
         document = hit["_source"]
         print(document)
+
+
+def clear_index(index_name: str):
+    query = {
+        "query": {
+            "match_all": {}
+        }
+    }
+    es.delete_by_query(index=index_name, body=query)
 
 
 def calculate_distance(lat1, lon1, lat2, lon2):
@@ -173,19 +195,8 @@ def decode_jwt_token(token: str) -> dict:
     payload = jwt.decode(token, SECRET_JWT_KEY, algorithms=["HS256"])
     return payload
 
-
-if __name__ == '__main__':
-    # pass
-    # add_location(-45.123456, 78.456789, 1)
-    # add_location(12.345678, -98.765432, 2)
-    # add_location(0.987654, 34.567890, 3)
-    # add_location(-23.456789, -56.789012, 4)
-    # add_location(67.890123, 123.456789, 5)
-
-    # delete_location(-45.123456, 78.456789)
-    # delete_location(12.345678, -98.765432)
-    # delete_location(0.987654, 34.567890)
-    # delete_location(-23.456789, -56.789012)
-    # delete_location(67.890123, 123.456789)
-
-    get_all_documents("location")
+# async def main():
+#     await show_elastic("location")
+#
+# if __name__ == '__main__':
+#     asyncio.run(main())

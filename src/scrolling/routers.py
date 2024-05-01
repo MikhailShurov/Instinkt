@@ -17,7 +17,7 @@ async def get_nearby_profiles(token: str, search_radius: int):
     result = list(map(float, location.split(", ")))
     lat, lon = result[0], result[1]
 
-    result = search_nearby_people(float(lat), float(lon), search_radius)
+    result = await search_nearby_people(float(lat), float(lon), search_radius)
     result = result['hits']['hits']
 
     answer = []
