@@ -111,7 +111,7 @@ class DBManager:
         result = [like for like in result2 if like in records]
         return result
 
-    async def create_empty_profile(self, email: str, uid: int):
+    async def create_empty_profile(self, email: str):
         try:
             d_description = "Some words about yourself"
             d_hobbies = "Your hobbies"
@@ -123,6 +123,5 @@ class DBManager:
 
             self.session.add(profile)
             await self.session.commit()
-            await add_location(0.00000, 0.00000, uid)
         except Exception as e:
             return {"success": False, "message": str(e)}
