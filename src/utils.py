@@ -1,4 +1,3 @@
-import asyncio
 import hashlib
 from math import radians, sin, cos, sqrt, atan2
 
@@ -8,23 +7,19 @@ from elasticsearch import Elasticsearch
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
-from src.config import DB_USER, DB_PASS, DB_HOST, DB_NAME, SECRET_JWT_KEY, ES_PASS
+from src.config import DB_USER, DB_PASS, DB_HOST, DB_NAME, SECRET_JWT_KEY, ES_PASS, REDIS_PORT, ES_PORT, DB_PORT
 from src.database import DBManager
 
-DATABASE_URL = f"postgresql+asyncpg://{DB_USER}:{DB_PASS}@{DB_HOST}:5432/{DB_NAME}"
+DATABASE_URL = f"postgresql+asyncpg://{DB_NAME}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_USER}?async_fallback=True"
+
 engine = create_async_engine(DATABASE_URL)
 async_session_maker = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)  # NOQA
 
-# redis = redis.Redis(
-#     host='redis-10905.c239.us-east-1-2.ec2.redns.redis-cloud.com',
-#     port=10905,
-#     password=REDIS_PASS)
-
 redis = redis.Redis(
-    host='127.0.0.1',
-    port=6379)
+    host='redis',
+    port=REDIS_PORT)
 
-es = Elasticsearch("http://localhost:9200", basic_auth=('elastic', ES_PASS))
+es = Elasticsearch(f"http://elasticsearch:{ES_PORT}", basic_auth=('elastic', ES_PASS))
 
 mapping = {
     "mappings": {
@@ -36,7 +31,6 @@ mapping = {
 
 
 # es.indices.delete(index=index_name)
-# es.indices.create(index=index_name, body=mapping)
 
 
 async def search_nearby_people(lat: float, lon: float, r: int) -> list:
@@ -78,6 +72,10 @@ async def update_location(lat: float, lon: float, uid: int):
 
 
 async def create_base_location(uid: int):
+    try:
+        es.indices.create(index="location", body=mapping)
+    except Exception as _:
+        pass
     new_location = {
         "uid": uid,
         "location": {"lat": 0.000000, "lon": 0.000000}
