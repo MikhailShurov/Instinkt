@@ -1,4 +1,5 @@
 import hashlib
+from math import radians, sin, cos, sqrt, atan2
 
 import jwt
 import redis
@@ -6,22 +7,19 @@ from elasticsearch import Elasticsearch
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
-from src.config import DB_USER, DB_PASS, DB_HOST, DB_NAME, SECRET_JWT_KEY, REDIS_PASS, ES_CLOUD_PASS
+from src.config import DB_USER, DB_PASS, DB_HOST, DB_NAME, SECRET_JWT_KEY, ES_PASS, REDIS_PORT, ES_PORT, DB_PORT
 from src.database import DBManager
 
-from math import radians, sin, cos, sqrt, atan2
+DATABASE_URL = f"postgresql+asyncpg://{DB_NAME}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_USER}?async_fallback=True"
 
-DATABASE_URL = f"postgresql+asyncpg://{DB_USER}:{DB_PASS}@{DB_HOST}:5432/{DB_NAME}"
 engine = create_async_engine(DATABASE_URL)
-async_session_maker = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+async_session_maker = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)  # NOQA
 
 redis = redis.Redis(
-    host='redis-10905.c239.us-east-1-2.ec2.redns.redis-cloud.com',
-    port=10905,
-    password=REDIS_PASS)
+    host='redis',
+    port=REDIS_PORT)
 
-es = Elasticsearch("https://f768326d7dda43fa91bf11bbc0da454b.us-central1.gcp.cloud.es.io",
-                   basic_auth=('elastic', ES_CLOUD_PASS))
+es = Elasticsearch(f"http://elasticsearch:{ES_PORT}", basic_auth=('elastic', ES_PASS))
 
 mapping = {
     "mappings": {
@@ -32,7 +30,10 @@ mapping = {
 }
 
 
-def search_nearby_people(lat: float, lon: float, r: int) -> list:
+# es.indices.delete(index=index_name)
+
+
+async def search_nearby_people(lat: float, lon: float, r: int) -> list:
     index_name = "location"
     query = {
         "query": {
@@ -56,13 +57,69 @@ def search_nearby_people(lat: float, lon: float, r: int) -> list:
     return result
 
 
-def add_location(lat: float, lon: float, uid: int):
+async def update_location(lat: float, lon: float, uid: int):
+    query = {
+        "script": {
+            "source": "ctx._source.location.lat = params.lat; ctx._source.location.lon = params.lon",
+            "lang": "painless",
+            "params": {
+                "lat": lat,
+                "lon": lon
+            }
+        }
+    }
+    es.update_by_query(index="location", body={"query": {"term": {"uid": uid}}, **query})
+
+
+async def create_base_location(uid: int):
+    try:
+        es.indices.create(index="location", body=mapping)
+    except Exception as _:
+        pass
     new_location = {
         "uid": uid,
-        "location": {"lat": lat, "lon": lon}
+        "location": {"lat": 0.000000, "lon": 0.000000}
     }
 
     es.index(index="location", body=new_location)
+
+
+async def delete_location(lat: float, lon: float):
+    query = {
+        "query": {
+            "bool": {
+                "must": [
+                    {"match": {"location.lat": lat}},
+                    {"match": {"location.lon": lon}}
+                ]
+            }
+        }
+    }
+
+    es.delete_by_query(index="location", body=query)
+
+
+async def show_elastic(index_name):
+    query = {
+        "query": {
+            "match_all": {}
+        }
+    }
+
+    result = es.search(index=index_name, body=query)
+
+    for hit in result["hits"]["hits"]:
+        document = hit["_source"]
+        print(document)
+
+
+def clear_index(index_name: str):
+    query = {
+        "query": {
+            "match_all": {}
+        }
+    }
+    es.delete_by_query(index=index_name, body=query)
 
 
 def calculate_distance(lat1, lon1, lat2, lon2):
@@ -118,5 +175,26 @@ def create_access_token(uid: int) -> str:
     return encoded_jwt
 
 
-def verify_request(token: str, uid: int):
-    return create_access_token(uid) == token
+def verify_request(token: str):
+    try:
+        decode_jwt_token(token)
+        return True
+    except jwt.InvalidTokenError:
+        return False
+
+
+def create_jwt_token(user_id: int) -> str:
+    payload = {"user_id": user_id}
+    token = jwt.encode(payload, SECRET_JWT_KEY, algorithm="HS256")
+    return token
+
+
+def decode_jwt_token(token: str) -> dict:
+    payload = jwt.decode(token, SECRET_JWT_KEY, algorithms=["HS256"])
+    return payload
+
+# async def main():
+#     await show_elastic("location")
+#
+# if __name__ == '__main__':
+#     asyncio.run(main())
