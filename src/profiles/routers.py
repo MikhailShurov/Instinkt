@@ -32,7 +32,19 @@ async def update_profile(info: ChangeProfileInfo):
     return {"status": "ok"}
 
 
-@router.get("/get_profile_info", status_code=status.HTTP_200_OK)
+@router.get("/get_profile", status_code=status.HTTP_200_OK)
+async def get_profile(token: str):
+    if not verify_request(token):
+        raise HTTPException(status_code=400, detail="Invalid token")
+    user_id = decode_jwt_token(token)['user_id']
+    db_manager = await get_db_manager()
+    profile = await db_manager.get_profile_by_id(user_id)
+    profile = profile._asdict()  # NOQA
+    profile.pop("id", None)
+    return {"profile": Profile(**profile)}
+
+
+@router.get("/get_custom_profile_info", status_code=status.HTTP_200_OK)
 async def get_profile_by_id(token: str, user_id: int):
     if not verify_request(token):
         raise HTTPException(status_code=400, detail="Invalid token")
