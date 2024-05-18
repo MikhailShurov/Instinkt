@@ -43,8 +43,8 @@ class DBManager:
         await self.session.commit()
         return location
 
-    async def check_if_like_exists(self, user_id: int):
-        query = select(exists().where(likes.c.sender_id == user_id))
+    async def check_if_like_exists(self, sender_id: int, receiver_id: int):
+        query = select(exists().where((likes.c.sender_id == sender_id) & (likes.c.receiver_id == receiver_id)))
         result = await self.session.execute(query)
         return result.scalar()
 
