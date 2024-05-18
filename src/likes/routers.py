@@ -15,7 +15,7 @@ async def like(like_obj: Like):
 
     db_manager = await get_db_manager()
     try:
-        like_exists = await db_manager.check_if_like_exists(user_id)
+        like_exists = await db_manager.check_if_like_exists(user_id, like_obj.profile_to_like_id)
         if not like_exists:
             save_data(like_obj.profile_to_like_id, user_id)
             result = await db_manager.like(user_id, like_obj.profile_to_like_id)
