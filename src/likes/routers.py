@@ -12,11 +12,12 @@ async def like(like_obj: Like):
     if not verify_request(like_obj.token):
         raise HTTPException(status_code=400, detail="Invalid token")
     user_id = decode_jwt_token(like_obj.token)['user_id']
-    save_data(like_obj.profile_to_like_id, user_id)
+
     db_manager = await get_db_manager()
     try:
         like_exists = await db_manager.check_if_like_exists(user_id)
         if not like_exists:
+            save_data(like_obj.profile_to_like_id, user_id)
             result = await db_manager.like(user_id, like_obj.profile_to_like_id)
         else:
             result = "like already exists"
