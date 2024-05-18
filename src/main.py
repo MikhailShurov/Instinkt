@@ -5,7 +5,7 @@ from src.profiles.routers import router as profile_router
 from src.likes.routers import router as like_router
 from src.scrolling.routers import router as scrolling_router
 
-app = FastAPI(title="Instinkt", description="")
+app = FastAPI(title="DoIt", description="")
 
 app.include_router(
     auth_router,
