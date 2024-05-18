@@ -7,7 +7,7 @@ router = APIRouter()
 
 
 @router.get("/get_nearby_profiles", status_code=status.HTTP_200_OK)
-async def get_nearby_profiles(token: str, search_radius: int):
+async def get_nearby_profiles(token: str, search_radius: int, counter: int):
     if not verify_request(token):
         raise HTTPException(status_code=400, detail="Invalid token")
 
@@ -17,7 +17,7 @@ async def get_nearby_profiles(token: str, search_radius: int):
     result = list(map(float, location.split(", ")))
     lat, lon = result[0], result[1]
 
-    result = await search_nearby_people(float(lat), float(lon), search_radius)
+    result = await search_nearby_people(float(lat), float(lon), search_radius, counter)
     result = result['hits']['hits']
 
     answer = []

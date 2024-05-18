@@ -115,7 +115,7 @@ class DBManager:
         try:
             d_description = "Some words about yourself"
             d_hobbies = "Your hobbies"
-            d_preferences = "Tell about your favourite music/books/games"
+            d_preferences = "false,false,false,false,false"
             d_location = "0.00000, 0.00000"
             d_contacts = "Place your contacts here:)"
             profile = Profile(email=email, name="Name", age=0, description=d_description, hobbies=d_hobbies,

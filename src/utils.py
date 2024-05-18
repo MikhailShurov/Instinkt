@@ -33,7 +33,7 @@ mapping = {
 # es.indices.delete(index=index_name)
 
 
-async def search_nearby_people(lat: float, lon: float, r: int) -> list:
+async def search_nearby_people(lat: float, lon: float, r: int, size: int) -> list:
     index_name = "location"
     query = {
         "query": {
@@ -51,7 +51,8 @@ async def search_nearby_people(lat: float, lon: float, r: int) -> list:
                     }
                 }
             }
-        }
+        },
+        "size": size
     }
     result = es.search(index=index_name, body=query)
     return result
