@@ -76,9 +76,7 @@ async def upload_profile_image(token: str, image: UploadFile = File(...)):
 
 
 @router.get("/get_profile_image", status_code=status.HTTP_200_OK)
-async def get_profile_image(token: str):
+async def get_profile_image(token: str, profile_id: str):
     if not verify_request(token):
         raise HTTPException(status_code=400, detail="Invalid token")
-
-    user_id = decode_jwt_token(token)['user_id']
-    return FileResponse(f"profile_images/{user_id}_profile_image.jpg", media_type="image/jpeg")
+    return FileResponse(f"profile_images/{profile_id}_profile_image.jpg", media_type="image/jpeg")
