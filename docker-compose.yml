@@ -64,5 +64,24 @@ services:
       - redis
     command: [ "/app/scripts/app.sh" ]
 
+  init:
+    image: curlimages/curl:latest
+    container_name: elasticsearch-init
+    depends_on:
+      - elasticsearch
+    entrypoint: >
+      sh -c "
+        sleep 15 &&
+        curl -u ${ES_USER}:${ES_PASS} -X PUT 'http://elasticsearch:9200/location' -H 'Content-Type: application/json' -d'
+        {
+          \"mappings\": {
+            \"properties\": {
+              \"location\": {\"type\": \"geo_point\"}
+            }
+          }
+        }
+        '
+      "
+
 volumes:
   postgres_data:

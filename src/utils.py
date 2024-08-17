@@ -7,7 +7,8 @@ from elasticsearch import Elasticsearch
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
-from src.config import DB_USER, DB_PASS, DB_HOST, DB_NAME, SECRET_JWT_KEY, ES_PASS, REDIS_PORT, ES_PORT, DB_PORT
+from src.config import DB_USER, DB_PASS, DB_HOST, DB_NAME, SECRET_JWT_KEY, ES_PASS, REDIS_PORT, ES_PORT, DB_PORT, \
+    ES_USER
 from src.database import DBManager
 
 DATABASE_URL = f"postgresql+asyncpg://{DB_NAME}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_USER}?async_fallback=True"
@@ -22,7 +23,7 @@ redis = redis.Redis(
     host='redis',
     port=REDIS_PORT)
 
-es = Elasticsearch(f"http://elasticsearch:{ES_PORT}", basic_auth=('elastic', ES_PASS))
+es = Elasticsearch(f"http://elasticsearch:{ES_PORT}", basic_auth=(ES_USER, ES_PASS))
 
 mapping = {
     "mappings": {
@@ -32,9 +33,12 @@ mapping = {
     }
 }
 
+# index_name = "location"
+# index_created = es.indices.exists(index=index_name)
+# if not index_created:
+#     response = es.indices.create(index=index_name, body=mapping)
 
 # es.indices.delete(index=index_name)
-
 
 async def search_nearby_people(lat: float, lon: float, r: int, size: int) -> list:
     index_name = "location"
@@ -78,7 +82,7 @@ async def update_location(lat: float, lon: float, uid: int):
 async def create_base_location(uid: int):
     try:
         es.indices.create(index="location", body=mapping)
-    except Exception as _:
+    except Exception as _:  # NOQA
         pass
     new_location = {
         "uid": uid,
