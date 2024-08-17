@@ -12,7 +12,10 @@ from src.database import DBManager
 
 DATABASE_URL = f"postgresql+asyncpg://{DB_NAME}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_USER}?async_fallback=True"
 
-engine = create_async_engine(DATABASE_URL)
+engine = create_async_engine(DATABASE_URL,
+                             connect_args={
+                                 "ssl": False
+                             })
 async_session_maker = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)  # NOQA
 
 redis = redis.Redis(

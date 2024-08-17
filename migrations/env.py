@@ -14,7 +14,7 @@ from src.likes.models import likes, Likes
 from src.auth.models import metadata as user_metadata
 from src.profiles.models import metadata as profiles_metadata
 from src.likes.models import metadata as likes_metadata
-from src.config import DB_HOST, DB_NAME, DB_PASS, DB_USER
+from src.config import DB_HOST, DB_NAME, DB_PASS, DB_USER, DB_PORT
 
 sys.path.append(os.path.join(sys.path[0], 'src'))
 
@@ -25,6 +25,10 @@ config.set_section_option(section, "DB_USER", DB_USER)
 config.set_section_option(section, "DB_PASS", DB_PASS)
 config.set_section_option(section, "DB_NAME", DB_NAME)
 config.set_section_option(section, "DB_HOST", DB_HOST)
+config.set_section_option(section, "DB_PORT", DB_PORT)
+
+database_url = f"postgresql+asyncpg://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}?async_fallback=True"
+config.set_main_option('sqlalchemy.url', database_url)
 
 fileConfig(config.config_file_name)
 

@@ -13,6 +13,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASS}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_DB: ${DB_NAME}
+      GSSLMODE: disable
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
       interval: 10s
@@ -28,8 +29,8 @@ services:
       - ./.env
     environment:
       discovery.type: single-node
-      ELASTIC_USERNAME: "elastic"
-      ELASTIC_PASSWORD: "iIFgBbdZ8paETvHyRQzu"
+      ELASTIC_USERNAME: ${ES_USER}
+      ELASTIC_PASSWORD: ${ES_PASS}
     ports:
       - "9200:9200"
     healthcheck:
@@ -54,7 +55,7 @@ services:
       context: .
     container_name: api
     ports:
-      - "8000:8000"
+      - "8080:8080"
     env_file:
       - ./.env
     depends_on:
